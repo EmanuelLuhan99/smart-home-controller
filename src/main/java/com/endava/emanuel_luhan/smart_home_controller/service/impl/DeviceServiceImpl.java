@@ -5,7 +5,9 @@ import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceRequest;
 import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceResponse;
 import com.endava.emanuel_luhan.smart_home_controller.mapper.DeviceMapper;
 import com.endava.emanuel_luhan.smart_home_controller.model.Device;
+import com.endava.emanuel_luhan.smart_home_controller.model.LogAction;
 import com.endava.emanuel_luhan.smart_home_controller.repository.DeviceRepository;
+import com.endava.emanuel_luhan.smart_home_controller.service.DeviceLogService;
 import com.endava.emanuel_luhan.smart_home_controller.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.util.List;
 public class DeviceServiceImpl implements DeviceService {
 
     private final DeviceRepository deviceRepository;
+    private final DeviceLogService deviceLogService;
 
     @Override
     public DeviceResponse createDevice(DeviceRequest request) {
@@ -27,6 +30,8 @@ public class DeviceServiceImpl implements DeviceService {
         }
 
         Device saved = deviceRepository.save(device);
+
+        deviceLogService.logStatusChange(saved, null, saved.getStatus(), LogAction.CREATED);
 
         return DeviceMapper.toResponse(saved);
     }
@@ -58,6 +63,15 @@ public class DeviceServiceImpl implements DeviceService {
         DeviceMapper.updateEntity(device, request);
         Device updatedDevice = deviceRepository.save(device);
 
+        if (oldStatus != null && !oldStatus.equals(updatedDevice.getStatus())) {
+            deviceLogService.logStatusChange(
+                    updatedDevice,
+                    oldStatus,
+                    updatedDevice.getStatus(),
+                    LogAction.UPDATED
+            );
+        }
+
         return DeviceMapper.toResponse(updatedDevice);
     }
 
@@ -67,6 +81,13 @@ public class DeviceServiceImpl implements DeviceService {
                 .orElseThrow(() -> new RuntimeException());
 
         deviceRepository.delete(device);
+
+        deviceLogService.logStatusChange(
+                device,
+                device.getStatus(),
+                null,
+                LogAction.DELETED
+        );
     }
 
     @Override
@@ -77,6 +98,13 @@ public class DeviceServiceImpl implements DeviceService {
         String oldStatus = device.getStatus();
         device.setStatus(request.getStatus());
         Device updatedDevice = deviceRepository.save(device);
+
+        deviceLogService.logStatusChange(
+                updatedDevice,
+                oldStatus,
+                updatedDevice.getStatus(),
+                LogAction.STATUS_CHANGED
+        );
 
         return DeviceMapper.toResponse(updatedDevice);
     }
