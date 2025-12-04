@@ -3,10 +3,10 @@ package com.endava.emanuel_luhan.smart_home_controller.mapper;
 import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceRequest;
 import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceResponse;
 import com.endava.emanuel_luhan.smart_home_controller.model.Device;
-import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
 public final class DeviceMapper {
+
+    private DeviceMapper(){}
 
     public static Device toEntity(DeviceRequest request){
 
