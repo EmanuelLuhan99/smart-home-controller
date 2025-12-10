@@ -10,7 +10,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Device {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "device_type", discriminatorType = DiscriminatorType.STRING)
+public abstract class Device {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,7 +24,8 @@ public class Device {
     @Column(nullable = false)
     private String status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private DeviceType type;
+    protected Device(String name, String status){
+        this.name = name;
+        this.status=status;
+    }
 }
