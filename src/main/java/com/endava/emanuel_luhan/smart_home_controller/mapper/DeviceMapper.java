@@ -1,33 +1,36 @@
 package com.endava.emanuel_luhan.smart_home_controller.mapper;
 
-import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceRequest;
+import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceCreateRequest;
 import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceResponse;
-import com.endava.emanuel_luhan.smart_home_controller.model.Device;
+import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceUpdateRequest;
+import com.endava.emanuel_luhan.smart_home_controller.model.*;
 
 public final class DeviceMapper {
 
     private DeviceMapper(){}
 
-    public static Device toEntity(DeviceRequest request){
+    public static Device toEntity(DeviceCreateRequest request){
 
         if (request == null)
             return null;
 
-        Device device = new Device();
-        device.setName(request.getName());
-        device.setStatus(request.getStatus());
-        device.setType(request.getType());
+        String name = request.getName();
+        String status = request.getStatus() != null ? request.getStatus() : "OFF";
 
-        return device;
+        return switch (request.getType()){
+            case ALARM -> new AlarmDevice(name, status, false);
+            case LIGHT -> new LightDevice(name, status, 0);
+            case THERMOSTAT -> new ThermostatDevice(name, status, 22.0);
+        };
     }
 
-    public static void updateEntity(Device device, DeviceRequest request){
+    public static void updateEntity(Device device, DeviceUpdateRequest request){
 
         if (request == null)
             return;
 
         device.setName(request.getName());
-        device.setType(request.getType());
+
         if (request.getStatus() != null){
             device.setStatus(request.getStatus());
         }
@@ -38,11 +41,22 @@ public final class DeviceMapper {
         if (device == null)
             return null;
 
+        DeviceType type;
+        if (device instanceof LightDevice){
+            type=DeviceType.LIGHT;
+        } else if (device instanceof ThermostatDevice) {
+            type = DeviceType.THERMOSTAT;
+        } else if (device instanceof AlarmDevice) {
+            type = DeviceType.ALARM;
+        } else {
+            throw new IllegalStateException("Unknown device subclass: " + device.getClass());
+        }
+
         return DeviceResponse.builder()
                 .id(device.getId())
                 .name(device.getName())
                 .status(device.getStatus())
-                .type(device.getType())
+                .type(type)
                 .build();
     }
 }

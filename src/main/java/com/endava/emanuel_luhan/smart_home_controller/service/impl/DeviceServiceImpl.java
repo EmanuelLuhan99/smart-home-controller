@@ -1,8 +1,10 @@
 package com.endava.emanuel_luhan.smart_home_controller.service.impl;
 
 import com.endava.emanuel_luhan.smart_home_controller.dto.ChangeStatusRequest;
-import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceRequest;
+import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceCreateRequest;
 import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceResponse;
+import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceUpdateRequest;
+import com.endava.emanuel_luhan.smart_home_controller.exception.DeviceNotFoundException;
 import com.endava.emanuel_luhan.smart_home_controller.mapper.DeviceMapper;
 import com.endava.emanuel_luhan.smart_home_controller.model.Device;
 import com.endava.emanuel_luhan.smart_home_controller.model.LogAction;
@@ -11,18 +13,20 @@ import com.endava.emanuel_luhan.smart_home_controller.service.DeviceLogService;
 import com.endava.emanuel_luhan.smart_home_controller.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class DeviceServiceImpl implements DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final DeviceLogService deviceLogService;
 
     @Override
-    public DeviceResponse createDevice(DeviceRequest request) {
+    public DeviceResponse createDevice(DeviceCreateRequest request) {
         Device device = DeviceMapper.toEntity(request);
 
         if (device.getStatus() == null){
@@ -37,15 +41,16 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public DeviceResponse getDeviceById(Long id) {
 
-        Device device = deviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException());//change this exception(MODIFY)
+        Device device = getDeviceOrThrow(id);
 
         return DeviceMapper.toResponse(device);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DeviceResponse> getAllDevices() {
         return deviceRepository.findAll()
                 .stream()
@@ -54,9 +59,9 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    public DeviceResponse updateDevice(Long id, DeviceRequest request) {
-        Device device = deviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException());
+    public DeviceResponse updateDevice(Long id, DeviceUpdateRequest request) {
+
+        Device device = getDeviceOrThrow(id);
 
         String oldStatus = device.getStatus();
 
@@ -77,8 +82,8 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Override
     public void deleteDevice(Long id) {
-        Device device = deviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException());
+
+        Device device = getDeviceOrThrow(id);
 
         deviceRepository.delete(device);
 
@@ -92,8 +97,8 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Override
     public  DeviceResponse changeStatus(Long id, ChangeStatusRequest request){
-        Device device = deviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException());
+
+        Device device = getDeviceOrThrow(id);
 
         String oldStatus = device.getStatus();
         device.setStatus(request.getStatus());
@@ -109,4 +114,9 @@ public class DeviceServiceImpl implements DeviceService {
         return DeviceMapper.toResponse(updatedDevice);
     }
 
+
+    private Device getDeviceOrThrow(Long id){
+        return deviceRepository.findById(id)
+                .orElseThrow(() -> new DeviceNotFoundException(id));
+    }
 }

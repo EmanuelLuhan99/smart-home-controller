@@ -3,6 +3,7 @@ package com.endava.emanuel_luhan.smart_home_controller.controller;
 import com.endava.emanuel_luhan.smart_home_controller.dto.DeviceEventLogResponse;
 import com.endava.emanuel_luhan.smart_home_controller.mapper.DeviceEventLogMapper;
 import com.endava.emanuel_luhan.smart_home_controller.service.DeviceLogService;
+import com.endava.emanuel_luhan.smart_home_controller.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +21,12 @@ import java.util.List;
 public class LogController {
 
     private final DeviceLogService deviceLogService;
+    private final DeviceService deviceService;
 
     @GetMapping("/devices/{deviceId}/logs")
     public ResponseEntity<List<DeviceEventLogResponse>> getLogsForDevice(@PathVariable Long deviceId){
-        log.info("Fetching logs for device with id={}", deviceId);
+
+        deviceService.getDeviceById(deviceId);
 
         List<DeviceEventLogResponse> responses = deviceLogService.getLogsForDevice(deviceId)
                 .stream()
@@ -35,7 +38,6 @@ public class LogController {
 
     @GetMapping("/logs")
     public ResponseEntity<List<DeviceEventLogResponse>> getAllLogs() {
-        log.info("Fetching all device logs");
 
         List<DeviceEventLogResponse> responses = deviceLogService.getAllLogs()
                 .stream()
